@@ -4,7 +4,9 @@ author: Manjai Maheshwari
 Date: July 2023
 """
 
+
 # Put the code for your API here.
+#!/home/manjari/miniconda3/envs/myenv/bin/python
 from fastapi import FastAPI, HTTPException
 from typing import Union, Optional
 # BaseModel from Pydantic is used to define data objects
@@ -13,9 +15,12 @@ import pandas as pd
 import os, pickle
 from ml.data import process_data
 
+
 # path to saved artifacts
 savepath = './model'
 filename = ['trained_model.pkl', 'encoder.pkl', 'labelizer.pkl']
+
+
 
 # Declare the data object with its components and their type.
 class InputData(BaseModel):
@@ -35,7 +40,7 @@ class InputData(BaseModel):
     native_country: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
                         "example": {
                                     'age':50,
                                     'workclass':"Private", 
@@ -78,6 +83,9 @@ async def greetings():
 # This allows sending of data (our InferenceSample) via POST to the API.
 @app.post("/inference/")
 async def ingest_data(inference: InputData):
+    global encoder
+    global model
+    global lb
     data = {  'age': inference.age,
                 'workclass': inference.workclass, 
                 'fnlgt': inference.fnlgt,

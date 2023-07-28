@@ -33,7 +33,8 @@ logging.basicConfig(filename='journal.log',
 # Add code to load in the data.
 datapath = "../data/census.csv"
 data = pd.read_csv(datapath)
-
+data.columns = data.columns.str.strip()
+print(data.columns)
 
 # Optional enhancement, use K-fold cross validation instead of a train-test split.
 train, test = train_test_split(data, test_size=0.20)
@@ -48,10 +49,15 @@ cat_features = [
     "sex",
     "native-country",
 ]
+
+print(train.columns)
 X_train, y_train, encoder, lb = process_data(
     train, categorical_features=cat_features, label="salary", training=True
 )
-
+print(X_train)
+print(y_train)
+print(encoder)
+print(lb)
 # Proces the test data with the process_data function.
 # Set train flag = False - We use the encoding from the train set
 X_test, y_test, encoder, lb = process_data(
