@@ -28,3 +28,19 @@ root - INFO - Model`s metrics:
 root - INFO - Precision: 0.7167207792207793, Recall: 0.5631377551020408, fbeta: 0.6307142857142857
 root - INFO - Computing slices...
 root - INFO - ************FINISH OF MODEL TRAINING************
+root - INFO - ************START OF MODEL TRAINING************
+root - INFO - DATA LOADED
+root - INFO - Data shape after split. Train: (26048, 15) 	 Test:(6513, 15)
+root - INFO - ************START OF MODEL TRAINING************
+root - INFO - DATA LOADED
+root - INFO - Data shape after split. Train: (26048, 15) 	 Test:(6513, 15)
+root - INFO - ************START OF MODEL TRAINING************
+root - INFO - DATA LOADED
+root - INFO - Data shape after split. Train: (26048, 15) 	 Test:(6513, 15)
+root - INFO - X_test data shape after transformation: (6513, 108)
+root - INFO - A model already exists...
+root - INFO - model, encoder and labeler loaded
+root - INFO - Model`s metrics:
+root - INFO - Precision: 0.7167207792207793, Recall: 0.5631377551020408, fbeta: 0.6307142857142857
+root - INFO - Computing slices...
+root - INFO - ************FINISH OF MODEL TRAINING************
