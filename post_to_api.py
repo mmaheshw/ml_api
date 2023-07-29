@@ -1,14 +1,14 @@
 """
 Script to post to FastAPI instance for model inference
-author: Laurent veyssier
-Date: Dec. 18th 2022
+author: Manjari Maheshwari
+Date: July 2023
 """
 
 import requests
 import json
 
-#url = "enter heroku web app url here"
-url = "https://project-api-yjo5.onrender.com"
+#url = "enter render web app url here"
+url = "https://project-api-2cbe.onrender.com"
 
 
 # explicit the sample to perform inference on
@@ -38,4 +38,11 @@ print("response status code", response.status_code)
 print("response content:")
 print(response.json())
 
- 
+
+
+
+
+
+
+
+

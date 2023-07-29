@@ -7,22 +7,17 @@ Date: July 2023
 
 # Put the code for your API here.
 #!/home/manjari/miniconda3/envs/myenv/bin/python
-from fastapi import FastAPI, HTTPException
-from typing import Union, Optional
-# BaseModel from Pydantic is used to define data objects
+from fastapi import FastAPI
 from pydantic import BaseModel
-import pandas as pd
-import os, pickle
+from contextlib import asynccontextmanager
+
+from ml.model import load_model, inference
 from ml.data import process_data
+import os
+import pandas as pd
 
 
-# path to saved artifacts
-savepath = './model'
-filename = ['trained_model.pkl', 'encoder.pkl', 'labelizer.pkl']
-
-
-
-# Declare the data object with its components and their type.
+MODEL_PATH = "./model/"
 class InputData(BaseModel):
     age: int
     workclass: str 
@@ -59,70 +54,67 @@ class InputData(BaseModel):
                                     }
                         }
 
-# instantiate FastAPI app
-app = FastAPI(  title="Inference API",
-                description="An API that takes a sample and runs an inference",
-                version="1.0.0")
 
-# load model artifacts on startup of the application to reduce latency
+# Instantiate the app.
+app = FastAPI()
+
+# Load model artifacts on startup of the application to reduce latency.
+# Use the "startup" event to load the model and set the lifespan context manager.
 @app.on_event("startup")
-async def startup_event(): 
+async def startup_event():
     global model, encoder, lb
-    # if saved model exits, load the model from disk
-    if os.path.isfile(os.path.join(savepath,filename[0])):
-        model = pickle.load(open(os.path.join(savepath,filename[0]), "rb"))
-        encoder = pickle.load(open(os.path.join(savepath,filename[1]), "rb"))
-        lb = pickle.load(open(os.path.join(savepath,filename[2]), "rb"))
+    model_path = os.path.join(MODEL_PATH, 'model.pkl')
+    encoder_path = os.path.join(MODEL_PATH, 'encoder.pkl')
+    labeler_path = os.path.join(MODEL_PATH, 'labeler.pkl')
+    model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
 
-
+# Define a GET on the specified endpoint.
 @app.get("/")
-async def greetings():
-    return "Welcome to our model API"
+async def say_hello():
+    return "The API is working!"
 
 
 # This allows sending of data (our InferenceSample) via POST to the API.
 @app.post("/inference/")
-async def ingest_data(inference: InputData):
-    global encoder
-    global model
-    global lb
+async def inference(inference: InputData):
+    print(inference)
     data = {  'age': inference.age,
                 'workclass': inference.workclass, 
                 'fnlgt': inference.fnlgt,
                 'education': inference.education,
-                'education-num': inference.education_num,
-                'marital-status': inference.marital_status,
+                'education_num': inference.education_num,
+                'marital_status': inference.marital_status,
                 'occupation': inference.occupation,
                 'relationship': inference.relationship,
                 'race': inference.race,
                 'sex': inference.sex,
-                'capital-gain': inference.capital_gain,
-                'capital-loss': inference.capital_loss,
-                'hours-per-week': inference.hours_per_week,
-                'native-country': inference.native_country,
+                'capital_gain': inference.capital_gain,
+                'capital_loss': inference.capital_loss,
+                'hours_per_week': inference.hours_per_week,
+                'native_country': inference.native_country,
                 }
 
     # prepare the sample for inference as a dataframe
     sample = pd.DataFrame(data, index=[0])
+    print(sample)
 
     # apply transformation to sample data
     cat_features = [
                     "workclass",
                     "education",
-                    "marital-status",
+                    "marital_status",
                     "occupation",
                     "relationship",
                     "race",
                     "sex",
-                    "native-country",
+                    "native_country",
                     ]
 
-    # if saved model exits, load the model from disk
-    if os.path.isfile(os.path.join(savepath,filename[0])):
-        model = pickle.load(open(os.path.join(savepath,filename[0]), "rb"))
-        encoder = pickle.load(open(os.path.join(savepath,filename[1]), "rb"))
-        lb = pickle.load(open(os.path.join(savepath,filename[2]), "rb"))
-        
+    model_path  = os.path.join(MODEL_PATH,'model.pkl')
+    encoder_path = os.path.join(MODEL_PATH,'encoder.pkl')
+    labeler_path = os.path.join(MODEL_PATH,'labeler.pkl')
+    model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
+ 
     sample,_,_,_ = process_data(
                                 sample, 
                                 categorical_features=cat_features, 
@@ -131,19 +123,17 @@ async def ingest_data(inference: InputData):
                                 lb=lb
                                 )
 
-    # get model prediction which is a one-dim array like [1]                            
+                         
+    #prediction = inference(model,sample)
     prediction = model.predict(sample)
 
     # convert prediction to label and add to data output
+    print(prediction)
     if prediction[0]>0.5:
         prediction = '>50K'
     else:
         prediction = '<=50K', 
+    
     data['prediction'] = prediction
 
-
     return data
-
-
-if __name__ == '__main__':
-    pass

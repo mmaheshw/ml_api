@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
 
+def ola():
+    print('olaola')
 
 def process_data(
     X, categorical_features=[], label=None, training=True, encoder=None, lb=None
@@ -45,10 +47,8 @@ def process_data(
     """
 
     if label is not None:
-        y = X[label.strip()]
+        y = X[label]
         X = X.drop([label], axis=1)
-        print(y)
-        print(X.columns)
     else:
         y = np.array([])
 
@@ -56,7 +56,7 @@ def process_data(
     X_continuous = X.drop(*[categorical_features], axis=1)
 
     if training is True:
-        encoder = OneHotEncoder(sparse=False, handle_unknown="ignore")
+        encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
         lb = LabelBinarizer()
         X_categorical = encoder.fit_transform(X_categorical)
         y = lb.fit_transform(y.values).ravel()

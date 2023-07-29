@@ -1,20 +1,12 @@
-
-from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import fbeta_score, precision_score, recall_score
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+import pickle, os
 import pandas as pd
-import multiprocessing
-import logging
-
-
-logging.basicConfig(filename='journal.log',
-                    level=logging.INFO,
-                    filemode='w',
-                    format='%(name)s - %(levelname)s - %(message)s')
-
 
 # Optional: implement hyperparameter tuning.
-def train_model(X_train, y_train):
+def train_model(X_train, y_train, grid_search = False):
     """
     Trains a machine learning model and returns it.
 
@@ -29,30 +21,34 @@ def train_model(X_train, y_train):
     model
         Trained machine learning model.
     """
-    parameters = {
-        'n_estimators': [10, 20, 30],
-        'max_depth': [5, 10],
-        'min_samples_split': [20, 50, 100],
-        'learning_rate': [1.0],  # 0.1,0.5,
-    }
+    ## TAKES TOO LONG
+    if grid_search:
+        param_grid = {'C': [0.1, 1, 10, 100, 1000], 
+                'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+                'kernel': ['linear','rbf']} 
 
-    njobs = multiprocessing.cpu_count() - 1
-    logging.info("Searching best hyperparameters on {} cores".format(njobs))
+        grid = GridSearchCV(SVC(random_state=107, verbose=True),
+                    param_grid, 
+                    scoring='accuracy',
+                    cv=10,
+                    refit=True,
+                    n_jobs=-1, 
+                    verbose=3)
 
-    clf = GridSearchCV(GradientBoostingClassifier(random_state=0),
-                       param_grid=parameters,
-                       cv=3,
-                       n_jobs=njobs,
-                       verbose=2,
-                       )
+        grid.fit(X_train, y_train)
+        print(f"Model's best score: {grid.best_score_}")
+        print(f"Model's best params: {grid.best_params_}")
 
-    clf.fit(X_train, y_train)
-    logging.info("********* Best parameters found ***********")
-    logging.info("BEST PARAMS: {}".format(clf.best_params_))
+        best_model = grid.best_estimator_
+        best_model.fit(X_train, y_train)
 
-    return clf
+        return best_model
+    else:
 
-    
+        #model = SVC(C = 0.1, gamma = 0.01, kernel ='rbf', random_state=1, verbose=True) 
+        model = RandomForestClassifier(n_estimators=10, max_depth=None, min_samples_split=2, random_state=0)
+        model.fit(X_train, y_train)
+        return model
 
 
 def compute_model_metrics(y, preds):
@@ -92,69 +88,82 @@ def inference(model, X):
         Predictions from the model.
     """
     preds = model.predict(X)
-
     return preds
 
-def compute_slices(df, feature, y, preds):
+
+def save_model(model, path, encoder=None, labeler=None):
     """
-    Compute the performance on slices for a given categorical feature
-    a slice corresponds to one value option of the categorical feature analyzed
-    ------
-    df: 
-        test dataframe pre-processed with features as column used for slices
-    feature:
-        feature on which to perform the slices
-    y : np.array
-        corresponding known labels, binarized.
-    preds : np.array
-        Predicted labels, binarized
+    Save the given model object to a specified file path using pickle.
 
-    Returns
-    ------
-    Dataframe with
-        n_samples: integer - number of data samples in the slice
-        precision : float
-        recall : float
-        fbeta : float
-    row corresponding to each of the unique values taken by the feature (slice)
-    """    
-    slice_options = df[feature].unique().tolist()
-    perf_df = pd.DataFrame(index=slice_options, 
-                            columns=['feature','n_samples','precision', 'recall', 'fbeta'])
-    for option in slice_options:
-        slice_mask = df[feature]==option
+    Args:
+        model (object): The machine learning model object to be saved.
+        path (str): The file path to save the model to.
+        encoder (object, optional): The encoder object used to transform input data, if any.
+        labeler (object, optional): The label encoder object used to transform target data, if any.
+    """  
 
-        slice_y = y[slice_mask]
-        slice_preds = preds[slice_mask]
-        precision, recall, fbeta = compute_model_metrics(slice_y, slice_preds)
+    pickle.dump(model, open(os.path.join(path,'model.pkl'), 'wb'))
+    if encoder:
+        pickle.dump(encoder, open(os.path.join(path,'encoder.pkl'), 'wb'))
+
+    if labeler:
+        pickle.dump(labeler, open(os.path.join(path,'labeler.pkl'), 'wb'))
+
+def load_model(model_path, encoder_path, labeler_path):
+    """
+    Load a previously saved machine learning model object, encoder object, and labeler object.
+
+    Args:
+        model_path (str): The file path to load the saved model from.
+        encoder_path (str): The file path to load the saved encoder object from.
+        labeler_path (str): The file path to load the saved labeler object from.
+
+    Returns:
+        tuple: A tuple containing the loaded model object, encoder object, and labeler object.
+    """
+    model = pickle.load(open(model_path, 'rb'))
+    
+    encoder = pickle.load(open(encoder_path, 'rb'))
+
+    lb = pickle.load(open(labeler_path, 'rb'))
+
+    return model, encoder, lb
+
+
+def slice_data(data, fixed_var, target_data, preds):
+    """
+    Computes precision, recall, and F-beta score for a given target variable and model predictions, sliced by a 
+    specified fixed variable.
+
+    Args:
+        data (pandas.DataFrame): The input dataset containing the fixed and target variables.
+        fixed_var (str): The name of the fixed variable to slice the data by.
+        target_data (numpy.array): The true target values.
+        preds (numpy.array): The predicted target values.
+
+    Returns:
+        pandas.DataFrame: A dataframe containing the fixed variable, class, precision, recall, and F-beta score for
+        each slice of the data.
+    """
+     
+    df_temp = pd.DataFrame(columns=['fixed_var','class','precision', 'recall', 'fbeta'])
+ 
+    print(fixed_var)
+    #print(data[fixed_var])
+    #print(target_data[fixed_var])
+   
+    for cls in data[fixed_var].unique():
+
+        slice_mask = data[fixed_var]==cls
+
+        target_data_slice = target_data[slice_mask]
+        preds_slice = preds[slice_mask]
         
-        perf_df.at[option, 'feature'] = feature
-        perf_df.at[option, 'n_samples'] = len(slice_y)
-        perf_df.at[option, 'precision'] = precision
-        perf_df.at[option, 'recall'] = recall
-        perf_df.at[option, 'fbeta'] = fbeta
+        precision, recall, fbeta = compute_model_metrics(target_data_slice, preds_slice)
+        print(precision, recall, fbeta)
+        
+        new_row = pd.Series({'fixed_var': fixed_var, 'class': cls, 'precision':precision,'recall':recall,'fbeta':fbeta})
 
-    # reorder columns in performance dataframe
-    perf_df.reset_index(names='feature value', inplace=True)
-    colList = list(perf_df.columns)
-    colList[0], colList[1] =  colList[1], colList[0]
-    perf_df = perf_df[colList]
+        df_temp = pd.concat([df_temp, new_row.to_frame().T], ignore_index=True)
 
-    return perf_df
-
-
-def compute_confusion_matrix(y, preds, labels=None):
-    """
-    Compute confusion matrix using the predictions and ground thruth provided
-    Inputs
-    ------
-    y : np.array
-        Known labels, binarized.
-    preds : np.array
-        Predicted labels, binarized.
-    Returns
-    ------
-    cm : confusion matrix for the provided prediction set
-    """
-    cm = confusion_matrix(y, preds)
-    return cm
+    return df_temp
