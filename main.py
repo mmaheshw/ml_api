@@ -15,6 +15,8 @@ from ml.model import load_model, inference
 from ml.data import process_data
 import os
 import pandas as pd
+from fastapi import Depends
+import pickle
 
 
 MODEL_PATH = "./model/"
@@ -67,16 +69,32 @@ async def startup_event():
     encoder_path = os.path.join(MODEL_PATH, 'encoder.pkl')
     labeler_path = os.path.join(MODEL_PATH, 'labeler.pkl')
     model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
+    print(f"Encoder in startup_event: {encoder}")
 
 # Define a GET on the specified endpoint.
 @app.get("/")
 async def say_hello():
     return "The API is working!"
 
+def load_encoder():
+    encoder_path = os.path.join(MODEL_PATH, 'encoder.pkl')
+    encoder = pickle.load(open(encoder_path, 'rb'))
+    return encoder
+
+def load_lb():
+    lb_path = os.path.join(MODEL_PATH, 'labeler.pkl')
+    lb = pickle.load(open(lb_path, 'rb'))
+    return lb
+
+def load_model():
+    model_path = os.path.join(MODEL_PATH, 'model.pkl')
+    model = pickle.load(open(model_path, 'rb'))
+    return model
 
 # This allows sending of data (our InferenceSample) via POST to the API.
 @app.post("/inference/")
-async def inference(inference: InputData):
+async def inference(inference: InputData, model = Depends(load_model), encoder = Depends(load_encoder), lb = Depends(load_lb) ):
+    print(f"Encoder in inference: {encoder}")
     print(inference)
     data = {  'age': inference.age,
                 'workclass': inference.workclass, 
@@ -132,7 +150,7 @@ async def inference(inference: InputData):
     if prediction[0]>0.5:
         prediction = '>50K'
     else:
-        prediction = '<=50K', 
+        prediction = '<=50K'
     
     data['prediction'] = prediction
 

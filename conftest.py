@@ -6,7 +6,11 @@ import os
 
 from ml.data import process_data
 
-
+@pytest.fixture(scope='session')
+def encoder():
+    encoder_path = './model/encoder.pkl'
+    encoder = pickle.load(open(encoder_path, 'rb'))
+    return encoder
 
 @pytest.fixture(scope='session')
 def data():
@@ -95,3 +99,4 @@ def encoder_lb(data, cat_features):
             test, categorical_features=cat_features, label="salary", training=False, encoder=encoder, lb=lb
         )
     return encoder, lb
+
