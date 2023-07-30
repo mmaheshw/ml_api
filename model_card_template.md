@@ -14,7 +14,9 @@ The developed model is designed for the specific task of binary classification, 
 The dataset was obtained from the uci public repository and its extraction was done by Barry Becker from the 1994 Census database. The dataset has 32561 rows and 15 columns, out of which 8 are categorical, 6 numerical and 1 the target (>50k or <=50k). More information can be found (here)[https://archive.ics.uci.edu/ml/datasets/census+income]
 
 
+# Model Metrics
 
+Precision: 0.7167207792207793, Recall: 0.5631377551020408, fbeta: 0.6307142857142857
 ## Evaluation Data
 For categorical features in the dataset, we performed categorical encoding using the same encoders that were utilized during the training phase. Specifically, we employed the Label Binarizer for the target variable and the One Hot Encoder for the categorical features. This ensured consistency and prevented any data leakage between the training and testing phase.
 
