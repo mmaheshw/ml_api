@@ -35,7 +35,7 @@ class InputData(BaseModel):
     native_country: str
 
     class Config:
-        json_schema_extra = {
+        schema_extra = {
                         "example": {
                                     'age':50,
                                     'workclass':"Private", 
@@ -110,10 +110,10 @@ async def inference(inference: InputData):
                     "native_country",
                     ]
 
-    model_path  = os.path.join(MODEL_PATH,'model.pkl')
-    encoder_path = os.path.join(MODEL_PATH,'encoder.pkl')
-    labeler_path = os.path.join(MODEL_PATH,'labeler.pkl')
-    model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
+    # model_path  = os.path.join(MODEL_PATH,'model.pkl')
+    # encoder_path = os.path.join(MODEL_PATH,'encoder.pkl')
+    # labeler_path = os.path.join(MODEL_PATH,'labeler.pkl')
+    # model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
  
     sample,_,_,_ = process_data(
                                 sample, 
