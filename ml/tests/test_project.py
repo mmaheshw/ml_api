@@ -67,7 +67,8 @@ def test_get():
 
 
 
-def test_post_50k(data):
+def test_post_50k(data, encoder_lb):
+    encoder, _ = encoder_lb
 
     """
     # take a sample from the data with a high salary
@@ -75,7 +76,7 @@ def test_post_50k(data):
     # remove target
     _ = sample.pop('salary')
     """
-
+   
     sample = {
         "age": 50,
         "workclass": "Private",
@@ -102,7 +103,8 @@ def test_post_50k(data):
     assert r.status_code == 200
     assert r.json()["prediction"]== '>50K'
 
-def test_post_0k(data):
+def test_post_0k(data, encoder_lb):
+    encoder, _ = encoder_lb
 
     """
     # take a sample from the data with a high salary
