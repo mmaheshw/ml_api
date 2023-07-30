@@ -8,7 +8,7 @@ import requests
 import json
 
 #url = "enter render web app url here"
-url = "https://project-api-2cbe.onrender.com"
+url = "https://project-api-ilhw.onrender.com/inference"
 
 
 # explicit the sample to perform inference on
