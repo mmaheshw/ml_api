@@ -126,7 +126,7 @@ def load_model(model_path, encoder_path, labeler_path):
     encoder = pickle.load(open(encoder_path, 'rb'))
 
     lb = pickle.load(open(labeler_path, 'rb'))
-
+    print(f"Encoder in load_model: {encoder}")
     return model, encoder, lb
 
 

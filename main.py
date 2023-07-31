@@ -68,7 +68,10 @@ async def startup_event():
     model_path = os.path.join(MODEL_PATH, 'model.pkl')
     encoder_path = os.path.join(MODEL_PATH, 'encoder.pkl')
     labeler_path = os.path.join(MODEL_PATH, 'labeler.pkl')
-    model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
+    model= load_model(model_path)
+    encoder=load_model(encoder_path)
+    lb=load_model(labeler_path)
+    #model, encoder, lb = load_model(model_path, encoder_path, labeler_path)
     print(f"Encoder in startup_event: {encoder}")
 
 # Define a GET on the specified endpoint.
@@ -90,6 +93,7 @@ def load_model():
     model_path = os.path.join(MODEL_PATH, 'model.pkl')
     model = pickle.load(open(model_path, 'rb'))
     return model
+
 
 # This allows sending of data (our InferenceSample) via POST to the API.
 @app.post("/inference/")
